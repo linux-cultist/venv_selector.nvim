@@ -1,3 +1,4 @@
+local config = require("venv-selector.config")
 local log = require("venv-selector.logger")
 
 local M = {}
@@ -29,7 +30,6 @@ function M.set_python_path_for_client(client_name, venv_python)
             return
         end
 
-        local config = require("venv-selector.config")
         if client.settings then
             client.settings = vim.tbl_deep_extend("force", client.settings, {
                 python = {
@@ -67,7 +67,6 @@ end
 function M.pylsp_hook(venv_python)
     local client_name = "pylsp"
     return M.execute_for_client(client_name, function(client)
-        local config = require("venv-selector.config")
         local settings = vim.tbl_deep_extend("force", (client.settings or client.config.settings), {
             pylsp = {
                 plugins = {
@@ -87,6 +86,17 @@ function M.pylsp_hook(venv_python)
         end
         log.info(message)
     end)
+end
+
+function M.notify_lsp(venv_python)
+    local count = 0
+    local hooks = config.user_settings.lsp_hooks
+    for name, state in pairs(hooks) do
+        if state then
+            count = count + M[name .. "_hook"](venv_python)
+        end
+    end
+    return count
 end
 
 function M.execute_for_client(name, callback)
